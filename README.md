@@ -2,6 +2,48 @@
 
 This fork has been modified to include the token probabilities. The original README is below.
 
+
+## Example
+
+```python
+from jsonformer import Jsonformer
+from transformers import AutoModelForCausalLM, AutoTokenizer
+
+model = AutoModelForCausalLM.from_pretrained("databricks/dolly-v2-12b")
+tokenizer = AutoTokenizer.from_pretrained("databricks/dolly-v2-12b")
+
+json_schema = {
+    "type": "object",
+    "properties": {
+        "name": {"type": "string"},
+        "age": {"type": "choice_probs", "enum": ["8", "9", "10", "11"]},
+        "age2": {"type": "number"},
+        "is_student": {"type": "boolean"},
+        "is_student2": {"type": "choice_probs", "enum": ["true", "false"]},
+        "courses": {
+            "type": "array",
+            "items": {"type": "string"}
+        }
+    }
+}
+
+prompt = "Generate a person's information based on the following schema:"
+jsonformer = Jsonformer(model, tokenizer, json_schema, prompt)
+generated_data = jsonformer()
+
+print(generated_data)
+# {'name': 'John Doe',
+#  'age': [{'prob': 0.1497802734375, 'choice': '8'},
+#   {'prob': 0.159423828125, 'choice': '9'},
+#   {'prob': 0.0982666015625, 'choice': '11'},
+#   {'prob': 0.59228515625, 'choice': '10'}],
+#  'age2': 10.0201,
+#  'is_student': True,
+#  'is_student2': [{'prob': 0.94580078125, 'choice': 'true'},
+#   {'prob': 0.05419921875, 'choice': 'false'}],
+#  'courses': ['C++']}
+```
+
 # Jsonformer: A Bulletproof Way to Generate Structured JSON from Language Models.
 
 ### Problem: Getting models to output structured JSON is hard

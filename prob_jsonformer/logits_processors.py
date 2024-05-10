@@ -80,7 +80,7 @@ class OutputNumbersTokens(LogitsWarper):
                 self.allowed_mask[token_id] = True
 
     def __call__(self, _, scores):
-        mask = self.allowed_mask.expand_as(scores[0])
+        mask = self.allowed_mask.expand_as(scores)
         scores[~mask] = -float("inf")
 
         return scores
