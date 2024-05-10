@@ -21,7 +21,7 @@ def get_valid_next_choices(choices_tokens, current_tokens):
     return torch.LongTensor(next_choices)
 
 
-def choice_tree(
+def _choice_tree(
     model: AutoModelForCausalLM,
     tokenizer: AutoTokenizer,
     input_ids: Int[Tensor, "seq"],
@@ -29,7 +29,6 @@ def choice_tree(
     choice: Optional[Int[Tensor, ""]] = None,
     prob: float = 1,
     current_tokens: Int[Tensor, "seq"] = torch.LongTensor([]),
-    z=[],
 ):
     if choice is not None:
         c = choice[None].to(current_tokens.device)
@@ -57,5 +56,19 @@ def choice_tree(
                 choice=next_choice,
                 prob=next_prob,
                 current_tokens=current_tokens,
-                z=z + [i],
             )
+
+
+def choice_tree(
+    *args,
+    **kwargs,
+):
+    choice_json = list(
+        _choice_tree(
+            *args,
+            **kwargs,
+        )
+    )
+    # order by probability
+    choice_json = sorted(choice_json, key=lambda x: -x["prob"])
+    return choice_json

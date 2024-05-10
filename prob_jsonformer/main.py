@@ -138,10 +138,7 @@ class Jsonformer:
         true_token_id = self.tokenizer.encode("true", return_tensors="pt")[0, 0]
         false_token_id = self.tokenizer.encode("false", return_tensors="pt")[0, 0]
 
-        if prob:
-            result = dict(true=logits[true_token_id], false=logits[false_token_id])
-        else:
-            result = logits[true_token_id] > logits[false_token_id]
+        result = logits[true_token_id] > logits[false_token_id]
 
         self.debug("[generate_boolean]", result)
 
@@ -201,24 +198,38 @@ class Jsonformer:
         self.debug("[generate_enum]", prompt, is_prompt=True)
 
         # These are necessary because we don't know if we're at the end or middle of an object/array
-        terminal_tokens = torch.concat([
-            self.tokenizer.encode(s, add_special_tokens=False, return_tensors="pt")[:, 0]
-            for s in ('", "', '"}', '"]')
-        ])
+        terminal_tokens = torch.concat(
+            [
+                self.tokenizer.encode(s, add_special_tokens=False, return_tensors="pt")[
+                    :, 0
+                ]
+                for s in ('", "', '"}', '"]')
+            ]
+        )
 
         highest_probability = 0.0
         best_option = None
         for option in enum_values:
-            n_option_tokens = self.tokenizer.encode(f'"{option}', add_special_tokens=False, return_tensors="pt").shape[1]
-            prompt_tokens = self.tokenizer.encode(prompt + f'"{option}', return_tensors="pt")
+            n_option_tokens = self.tokenizer.encode(
+                f'"{option}', add_special_tokens=False, return_tensors="pt"
+            ).shape[1]
+            prompt_tokens = self.tokenizer.encode(
+                prompt + f'"{option}', return_tensors="pt"
+            )
             option_tokens = prompt_tokens[0, -n_option_tokens:]
 
             with torch.no_grad():
-                logits = self.model.forward(prompt_tokens.to(self.model.device)).logits[0, -n_option_tokens-1:]
+                logits = self.model.forward(prompt_tokens.to(self.model.device)).logits[
+                    0, -n_option_tokens - 1 :
+                ]
             probabilities = torch.softmax(logits, dim=1)
-            option_token_probabilities = probabilities[:-1][torch.arange(probabilities.shape[0]-1), option_tokens]
+            option_token_probabilities = probabilities[:-1][
+                torch.arange(probabilities.shape[0] - 1), option_tokens
+            ]
             termination_probability = torch.max(probabilities[-1, terminal_tokens])
-            option_probability = torch.prod(option_token_probabilities) * termination_probability
+            option_probability = (
+                torch.prod(option_token_probabilities) * termination_probability
+            )
 
             if option_probability > highest_probability:
                 best_option = option
@@ -252,7 +263,7 @@ class Jsonformer:
         max_type = None
         max_logit = -float("inf")
         for possible_type in possible_types:
-            try: 
+            try:
                 prefix_tokens = self.type_prefix_tokens[possible_type]
             except KeyError:
                 raise ValueError(f"Unsupported schema type: {possible_type}")
@@ -265,7 +276,7 @@ class Jsonformer:
             raise Exception("Unable to find best type to generate for union type")
         self.debug("[choose_type_to_generate]", max_type)
         return max_type
-    
+
     def generate_value(
         self,
         schema: Dict[str, Any],

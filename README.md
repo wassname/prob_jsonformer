@@ -1,50 +1,67 @@
 # prob_jsonformer: A Bulletproof Way to Generate Probabilistic Structured JSON from Language Models.
 
-This fork has been modified to include the token probabilities. The original README is below.
+This fork has been modified to include the token probabilities. The original [README](https://github.com/1rgs/jsonformer) is includesbelow.
+
+I've also merged some of hte recent pr's for enum, integer, null, union. You can see them all below in this example:
 
 
 ## Example
 
 ```python
-from jsonformer import Jsonformer
+from prob_jsonformer import Jsonformer
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
-model = AutoModelForCausalLM.from_pretrained("databricks/dolly-v2-12b")
-tokenizer = AutoTokenizer.from_pretrained("databricks/dolly-v2-12b")
+model_name = "databricks/dolly-v2-3b"
+model = AutoModelForCausalLM.from_pretrained(model_name)
+tokenizer = AutoTokenizer.from_pretrained(model_name)
 
 json_schema = {
     "type": "object",
     "properties": {
         "name": {"type": "string"},
-        "age": {"type": "choice_probs", "enum": ["8", "9", "10", "11"]},
-        "age2": {"type": "number"},
+        "age": {"type": "integer"},
+        "age_probs": {"type": "choice_probs", "enum": [str(s) for s in range(10, 20)]},
+        "unit_time": {"type": "number"},
         "is_student": {"type": "boolean"},
-        "is_student2": {"type": "choice_probs", "enum": ["true", "false"]},
+        "is_student_probs": {"type": "choice_probs", "enum": ["true", "false"]},
         "courses": {
             "type": "array",
             "items": {"type": "string"}
-        }
+        },
+        "trim": {"type": ["string", "null"]},
+        "color": {
+            "type": "enum",
+            "values": ["red", "green", "blue", "brown", "white", "black"],
+        },
     }
 }
 
-prompt = "Generate a person's information based on the following schema:"
-jsonformer = Jsonformer(model, tokenizer, json_schema, prompt)
+prompt = "Generate a young person's information based on the following schema:"
+jsonformer = Jsonformer(model, tokenizer, json_schema, prompt, temperature=0)
 generated_data = jsonformer()
 
-print(generated_data)
-# {'name': 'John Doe',
-#  'age': [{'prob': 0.1497802734375, 'choice': '8'},
-#   {'prob': 0.159423828125, 'choice': '9'},
-#   {'prob': 0.0982666015625, 'choice': '11'},
-#   {'prob': 0.59228515625, 'choice': '10'}],
-#  'age2': 10.0201,
-#  'is_student': True,
-#  'is_student2': [{'prob': 0.94580078125, 'choice': 'true'},
-#   {'prob': 0.05419921875, 'choice': 'false'}],
-#  'courses': ['C++']}
+generated_data = {'name': 'John Doe',
+ 'age': 20,
+ 'age_probs': [{'prob': 0.794921875, 'choice': '12'},
+  {'prob': 0.068359375, 'choice': '10'},
+  {'prob': 0.04345703125, 'choice': '16'},
+  {'prob': 0.03228759765625, 'choice': '14'},
+  {'prob': 0.0175628662109375, 'choice': '11'},
+  {'prob': 0.0157318115234375, 'choice': '15'},
+  {'prob': 0.006664276123046875, 'choice': '18'},
+  {'prob': 0.0046539306640625, 'choice': '13'},
+  {'prob': 0.00041294097900390625, 'choice': '17'},
+  {'prob': 0.00028824806213378906, 'choice': '19'},,
+ 'unit_time': 0.01,
+ 'is_student': True,
+ 'is_student_probs': [{'prob': 0.8310546875, 'choice': 'true'},
+  {'prob': 0.1688232421875, 'choice': 'false'}],
+ 'courses': ['C1'],
+ 'trim': None,
+ 'color': 'white'}
 ```
 
-# Jsonformer: A Bulletproof Way to Generate Structured JSON from Language Models.
+# ORIGINAL: Jsonformer: A Bulletproof Way to Generate Structured JSON from Language Models.
 
 ### Problem: Getting models to output structured JSON is hard
 
