@@ -1,6 +1,6 @@
 from typing import List, Union, Dict, Any
 
-from jsonformer.logits_processors import (
+from prob_jsonformer.logits_processors import (
     NumberStoppingCriteria,
     OutputNumbersTokens,
     StringStoppingCriteria,
@@ -12,7 +12,7 @@ import json
 GENERATION_MARKER = "|GENERATION|"
 
 
-class Jsonformer:
+class prob_jsonformer:
     value: Dict[str, Any] = {}
 
     def __init__(
@@ -80,9 +80,11 @@ class Jsonformer:
             if iterations > 3:
                 raise ValueError("Failed to generate a valid number")
 
-            return self.generate_number(temperature=self.temperature * 1.3, iterations=iterations+1)
+            return self.generate_number(
+                temperature=self.temperature * 1.3, iterations=iterations + 1
+            )
 
-    def generate_boolean(self) -> bool:
+    def generate_boolean(self, prob=False) -> bool:
         prompt = self.get_prompt()
         self.debug("[generate_boolean]", prompt, is_prompt=True)
 
@@ -90,13 +92,17 @@ class Jsonformer:
         output = self.model.forward(input_tensor.to(self.model.device))
         logits = output.logits[0, -1]
 
-        # todo: this assumes that "true" and "false" are both tokenized to a single token
+        # TODO: this assumes that "true" and "false" are both tokenized to a single token
         # this is probably not true for all tokenizers
         # this can be fixed by looking at only the first token of both "true" and "false"
+        # FIXME: consdier " True", " true", "\ntrue" etc
         true_token_id = self.tokenizer.convert_tokens_to_ids("true")
         false_token_id = self.tokenizer.convert_tokens_to_ids("false")
 
-        result = logits[true_token_id] > logits[false_token_id]
+        if prob:
+            result = dict(true=logits[true_token_id], false=logits[false_token_id])
+        else:
+            result = logits[true_token_id] > logits[false_token_id]
 
         self.debug("[generate_boolean]", result)
 
@@ -199,7 +205,6 @@ class Jsonformer:
             output = self.model.forward(input_tensor.to(self.model.device))
             logits = output.logits[0, -1]
 
-
             top_indices = logits.topk(30).indices
             sorted_token_ids = top_indices[logits[top_indices].argsort(descending=True)]
 
@@ -208,10 +213,10 @@ class Jsonformer:
 
             for token_id in sorted_token_ids:
                 decoded_token = self.tokenizer.decode(token_id)
-                if ',' in decoded_token:
+                if "," in decoded_token:
                     found_comma = True
                     break
-                if ']' in decoded_token:
+                if "]" in decoded_token:
                     found_close_bracket = True
                     break
 

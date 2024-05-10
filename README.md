@@ -1,3 +1,7 @@
+# prob_jsonformer: A Bulletproof Way to Generate Probabilistic Structured JSON from Language Models.
+
+This fork has been modified to include the token probabilities. The original README is below.
+
 # Jsonformer: A Bulletproof Way to Generate Structured JSON from Language Models.
 
 ### Problem: Getting models to output structured JSON is hard
