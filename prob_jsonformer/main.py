@@ -5,14 +5,16 @@ from prob_jsonformer.logits_processors import (
     OutputNumbersTokens,
     StringStoppingCriteria,
 )
+from prob_jsonformer.choice_tree import choice_tree
 from termcolor import cprint
 from transformers import PreTrainedModel, PreTrainedTokenizer
 import json
+import torch
 
 GENERATION_MARKER = "|GENERATION|"
 
 
-class prob_jsonformer:
+class Jsonformer:
     value: Dict[str, Any] = {}
 
     def __init__(
@@ -145,6 +147,18 @@ class prob_jsonformer:
 
         return response.split('"')[0].strip()
 
+    def generate_choice_probs(self, choices) -> str:
+        prompt = self.get_prompt() + '"'
+        self.debug("[generate_string_prob]", prompt, is_prompt=True)
+        input_ids = self.tokenizer.encode(prompt, return_tensors="pt").to(
+            self.model.device
+        )[0]
+        choices_tokens = self.tokenizer(choices).input_ids
+        choices_tokens = [torch.tensor(c) for c in choices_tokens]
+
+        r = list(choice_tree(self.model, self.tokenizer, input_ids, choices_tokens))
+        return r  # json.dumps(r)
+
     def generate_object(
         self, properties: Dict[str, Any], obj: Dict[str, Any]
     ) -> Dict[str, Any]:
@@ -178,6 +192,12 @@ class prob_jsonformer:
             else:
                 obj.append(self.generation_marker)
             return self.generate_string()
+        elif schema_type == "choices":
+            if key:
+                obj[key] = self.generation_marker
+            else:
+                obj.append(self.generation_marker)
+            return self.generate_choice_probs(schema["enum"])
         elif schema_type == "array":
             new_array = []
             obj[key] = new_array
