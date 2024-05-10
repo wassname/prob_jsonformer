@@ -2,6 +2,7 @@ from typing import List
 from transformers import PreTrainedTokenizer, LogitsWarper, StoppingCriteria
 import torch
 
+
 class StringStoppingCriteria(StoppingCriteria):
     def __init__(self, tokenizer: PreTrainedTokenizer, prompt_length: int):
         self.tokenizer = tokenizer
@@ -61,6 +62,7 @@ class NumberStoppingCriteria(StoppingCriteria):
 
         return False
 
+
 class OutputNumbersTokens(LogitsWarper):
     def __init__(self, tokenizer: PreTrainedTokenizer, prompt: str):
         self.tokenizer = tokenizer
@@ -78,7 +80,7 @@ class OutputNumbersTokens(LogitsWarper):
                 self.allowed_mask[token_id] = True
 
     def __call__(self, _, scores):
-        mask = self.allowed_mask.expand_as(scores)
+        mask = self.allowed_mask.expand_as(scores[0])
         scores[~mask] = -float("inf")
 
         return scores

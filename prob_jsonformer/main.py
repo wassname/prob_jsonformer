@@ -192,7 +192,7 @@ class Jsonformer:
             else:
                 obj.append(self.generation_marker)
             return self.generate_string()
-        elif schema_type == "choices":
+        elif schema_type == "choice_probs":
             if key:
                 obj[key] = self.generation_marker
             else:
