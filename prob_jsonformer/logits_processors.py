@@ -28,11 +28,7 @@ class StringStoppingCriteria(StoppingCriteria):
             # because of tokens this wont work pefectly
             gen_ids = input_ids[0][self.prompt_length :]
             o = self.tokenizer.decode(gen_ids, skip_special_tokens=True)
-            print("o", o)
             str_l = len(o)
-            print(
-                f"stopping? self.max_length={self.max_length} str_l={str_l},self.prompt_length={self.prompt_length}"
-            )
             if str_l > self.max_length:
                 return True
 
