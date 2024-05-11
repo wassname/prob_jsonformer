@@ -7,7 +7,7 @@ from prob_jsonformer.logits_processors import (
     OutputIntegersTokens,
     StringStoppingCriteria,
 )
-from prob_jsonformer.choice_tree import choice_tree
+from prob_jsonformer.prob_choice_tree import prob_choice_tree
 from prob_jsonformer.type_prefixes import get_prefix_tokens_for_types
 
 from termcolor import cprint
@@ -193,7 +193,9 @@ class Jsonformer:
         choices_tokens = self.tokenizer(choices).input_ids
         choices_tokens = [torch.tensor(c) for c in choices_tokens]
 
-        r = list(choice_tree(self.model, self.tokenizer, input_ids, choices_tokens))
+        r = list(
+            prob_choice_tree(self.model, self.tokenizer, input_ids, choices_tokens)
+        )
         return r
 
     def generate_p_integer(self, range_min: float, range_max: float) -> float:

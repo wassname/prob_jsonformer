@@ -21,7 +21,7 @@ def get_valid_next_choices(choices_tokens, current_tokens):
     return torch.LongTensor(next_choices)
 
 
-def _choice_tree(
+def _prob_choice_tree(
     model: AutoModelForCausalLM,
     tokenizer: AutoTokenizer,
     input_ids: Int[Tensor, "seq"],
@@ -48,7 +48,7 @@ def _choice_tree(
         for i in range(len(next_choices)):
             next_choice = next_choices[i]
             next_prob = prob * probs[i].item()
-            yield from choice_tree(
+            yield from prob_choice_tree(
                 model=model,
                 tokenizer=tokenizer,
                 choices_tokens=choices_tokens,
@@ -59,12 +59,12 @@ def _choice_tree(
             )
 
 
-def choice_tree(
+def prob_choice_tree(
     *args,
     **kwargs,
 ):
     choice_json = list(
-        _choice_tree(
+        _prob_choice_tree(
             *args,
             **kwargs,
         )

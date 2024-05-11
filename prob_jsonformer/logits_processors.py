@@ -25,7 +25,7 @@ class StringStoppingCriteria(StoppingCriteria):
         result = '"' in last_token
 
         if self.max_length is not None:
-            # because of tokens this wont work pefectly
+            # because of tokens this wont work pefectly, we might go 0-10 chars over
             gen_ids = input_ids[0][self.prompt_length :]
             o = self.tokenizer.decode(gen_ids, skip_special_tokens=True)
             str_l = len(o)
