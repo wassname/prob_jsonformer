@@ -5,6 +5,14 @@ from torch import Tensor
 from typing import List, Callable, Tuple, Dict, Optional
 import pandas as pd
 from transformers import AutoModelForCausalLM, AutoTokenizer
+import math
+
+
+def round_to_nsf(num, nsf):
+    if num != 0:
+        return round(num, -int(math.floor(math.log10(abs(num))) + 1 - nsf))
+    else:
+        return 0  # Can't take the log of 0
 
 
 def get_valid_next_choices(choices_tokens, current_tokens):
@@ -61,6 +69,8 @@ def _prob_choice_tree(
 
 def prob_choice_tree(
     *args,
+    sort: bool = True,
+    round=3,
     **kwargs,
 ):
     choice_json = list(
@@ -70,5 +80,10 @@ def prob_choice_tree(
         )
     )
     # order by probability
-    choice_json = sorted(choice_json, key=lambda x: -x["prob"])
+    if sort:
+        choice_json = sorted(choice_json, key=lambda x: -x["prob"])
+
+    # round probabilities
+    for c in choice_json:
+        c["prob"] = round_to_nsf(c["prob"], round)
     return choice_json
