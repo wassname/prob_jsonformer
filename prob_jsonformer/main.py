@@ -7,7 +7,7 @@ from prob_jsonformer.logits_processors import (
     OutputIntegersTokens,
     StringStoppingCriteria,
 )
-from prob_jsonformer.prob_choice_tree import prob_choice_tree
+from prob_jsonformer.prob_choice_tree import prob_choice_tree, round_to_nsf
 from prob_jsonformer.type_prefixes import get_prefix_tokens_for_types
 
 from termcolor import cprint
@@ -181,7 +181,7 @@ class Jsonformer:
 
         return response.split('"')[0].strip()
 
-    def generate_p_enum(self, choices) -> str:
+    def generate_p_enum(self, values: list, round: int) -> str:
         """
         This is not in the json schema, but can be usefull for effeciently getting the prob distibution over choices
         """
@@ -190,25 +190,32 @@ class Jsonformer:
         input_ids = self.tokenizer.encode(prompt, return_tensors="pt").to(
             self.model.device
         )[0]
-        choices_tokens = self.tokenizer(choices).input_ids
-        choices_tokens = [torch.tensor(c) for c in choices_tokens]
+        values_tokens = self.tokenizer(values).input_ids
+        values_tokens = [torch.tensor(c) for c in values_tokens]
 
         r = list(
-            prob_choice_tree(self.model, self.tokenizer, input_ids, choices_tokens)
+            prob_choice_tree(
+                self.model, self.tokenizer, input_ids, values_tokens, round=round
+            )
         )
         return r
 
-    def generate_p_integer(self, range_min: float, range_max: float) -> float:
+    def generate_p_integer(
+        self, range_min: float, range_max: float, round: int
+    ) -> float:
         """
         This is not in the json schema, but can be usefull for effeciently generating the weighted mean from a range of integers
         """
-        choices = [str(n) for n in range(int(range_min), int(range_max) + 1)]
-        result = self.generate_p_enum(choices)
+        values = [str(n) for n in range(int(range_min), int(range_max) + 1)]
+        result = self.generate_p_enum(values, round=round)
 
         # now do a weighted average
         total = 0.0
         for r in result:
             total += float(r["choice"]) * r["prob"]
+
+        if round is not None:
+            total = round_to_nsf(total, round)
         return total
 
     def generate_enum(self, enum_values: Set[str]) -> str:
@@ -244,10 +251,12 @@ class Jsonformer:
             option_token_probabilities = probabilities[:-1][
                 torch.arange(probabilities.shape[0] - 1), option_tokens
             ]
+
             termination_probability = torch.max(probabilities[-1, terminal_tokens])
             option_probability = (
                 torch.prod(option_token_probabilities) * termination_probability
             )
+            self.debug("[generate_enum]", f"{option_probability}, {option}")
 
             if option_probability > highest_probability:
                 best_option = option
@@ -339,13 +348,15 @@ class Jsonformer:
                 obj[key] = self.generation_marker
             else:
                 obj.append(self.generation_marker)
-            return self.generate_p_enum(schema["values"])
+            return self.generate_p_enum(schema["values"], round=schema.get("round", 3))
         elif schema_type == "p_integer":
             if key:
                 obj[key] = self.generation_marker
             else:
                 obj.append(self.generation_marker)
-            return self.generate_p_integer(schema["minimum"], schema["maximum"])
+            return self.generate_p_integer(
+                schema["minimum"], schema["maximum"], round=schema.get("round", 3)
+            )
         elif schema_type == "enum":
             if key:
                 obj[key] = self.generation_marker
@@ -405,7 +416,10 @@ class Jsonformer:
 
     def get_prompt(self):
         template = """{prompt}\nOutput result in the following JSON schema format:\n```json{schema}```\nResult: ```json\n{progress}"""
-        progress = json.dumps(self.value)
+        # TODO: collapse p_X schema types into X to not confuse the model
+        value = self.value
+
+        progress = json.dumps(value)
         gen_marker_index = progress.find(f'"{self.generation_marker}"')
         if gen_marker_index != -1:
             progress = progress[:gen_marker_index]
