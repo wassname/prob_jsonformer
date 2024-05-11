@@ -182,6 +182,9 @@ class Jsonformer:
         return response.split('"')[0].strip()
 
     def generate_choice_probs(self, choices) -> str:
+        """
+        This is not in the json schema, but can be usefull for effeciently getting the prob distibution over choices
+        """
         prompt = self.get_prompt() + '"'
         self.debug("[generate_string_prob]", prompt, is_prompt=True)
         input_ids = self.tokenizer.encode(prompt, return_tensors="pt").to(
@@ -192,6 +195,19 @@ class Jsonformer:
 
         r = list(choice_tree(self.model, self.tokenizer, input_ids, choices_tokens))
         return r  # json.dumps(r)
+
+    def generate_range_mean(self, range_min: float, range_max: float) -> float:
+        """
+        This is not in the json schema, but can be usefull for effeciently generating the weighted mean from a range of integers
+        """
+        choices = [str(n) for n in range(int(range_min), int(range_max) + 1)]
+        result = self.generate_choice_probs(choices)
+
+        # now do a weighted average
+        total = 0.0
+        for r in result:
+            total += float(r["choice"]) * r["prob"]
+        return total
 
     def generate_enum(self, enum_values: Set[str]) -> str:
         prompt = self.get_prompt()
@@ -322,6 +338,12 @@ class Jsonformer:
             else:
                 obj.append(self.generation_marker)
             return self.generate_choice_probs(schema["enum"])
+        elif schema_type == "range_mean":
+            if key:
+                obj[key] = self.generation_marker
+            else:
+                obj.append(self.generation_marker)
+            return self.generate_range_mean(schema["minimum"], schema["maximum"])
         elif schema_type == "enum":
             if key:
                 obj[key] = self.generation_marker
