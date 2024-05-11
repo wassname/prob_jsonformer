@@ -19,28 +19,24 @@ json_schema = {
     "type": "object",
     "properties": {
         # we can return the probability of each choice, even if they are multiple tokens
-        "age_probs": {"type": "choice_probs", "enum": [str(s) for s in range(10, 30)]},
+        "age_probs": {"type": "p_enum", "values": [str(s) for s in range(10, 20)]},
         # we can return the probabilistic weighted mean of a range
-        "age_wmean": {"type": "range_mean", "minimum": 10, "maximum": 30},
+        "age_wmean": {"type": "p_integer", "minimum": 10, "maximum": 20},
         # the prob of true and false
-        "is_student_probs": {"type": "choice_probs", "enum": ["true", "false"]},
+        "is_student_probs": {"type": "p_enum", "values": ["true", "false"]},
         "is_student": {"type": "boolean"},
         # we've merged patches for enum, integer, null, union - currently mising from jsonformer
         "name": {"type": "string", "maxLength": 4},
         "age": {"type": "integer"},
         "unit_time": {"type": "number"},
-        "courses": {
-            "type": "array",
-            "items": {"type": "string"}
-        },
+        "courses": {"type": "array", "items": {"type": "string"}},
         "trim": {"type": ["string", "null"]},
         "color": {
             "type": "enum",
             "values": ["red", "green", "blue", "brown", "white", "black"],
         },
-    }
+    },
 }
-
 
 prompt = "Generate a young person's information based on the following schema:"
 jsonformer = Jsonformer(model, tokenizer, json_schema, prompt, temperature=0)
@@ -48,31 +44,21 @@ generated_data = jsonformer()
 
 generated_data = {
     "age_probs": [
-        {"prob": 0.94091796875, "choice": "10"},
-        {"prob": 0.033233642578125, "choice": "20"},
-        {"prob": 0.0122222900390625, "choice": "12"},
-        {"prob": 0.00412750244140625, "choice": "21"},
-        {"prob": 0.0028362274169921875, "choice": "16"},
-        {"prob": 0.0018453598022460938, "choice": "15"},
-        {"prob": 0.00113677978515625, "choice": "11"},
-        {"prob": 0.0011110305786132812, "choice": "18"},
-        {"prob": 0.0005083084106445312, "choice": "25"},
-        {"prob": 0.0004558563232421875, "choice": "23"},
-        {"prob": 0.0002498626708984375, "choice": "14"},
-        {"prob": 0.00023281574249267578, "choice": "13"},
-        {"prob": 0.0002238750457763672, "choice": "22"},
-        {"prob": 0.00018131732940673828, "choice": "26"},
-        {"prob": 0.0001690387725830078, "choice": "24"},
-        {"prob": 0.00012552738189697266, "choice": "19"},
-        {"prob": 7.796287536621094e-05, "choice": "27"},
-        {"prob": 7.265806198120117e-05, "choice": "28"},
-        {"prob": 4.106760025024414e-05, "choice": "17"},
-        {"prob": 2.5033950805664062e-06, "choice": "29"},
+        {"prob": 0.62353515625, "choice": "10"},
+        {"prob": 0.349609375, "choice": "12"},
+        {"prob": 0.01123809814453125, "choice": "11"},
+        {"prob": 0.00760650634765625, "choice": "16"},
+        {"prob": 0.0025482177734375, "choice": "13"},
+        {"prob": 0.0025081634521484375, "choice": "15"},
+        {"prob": 0.0018062591552734375, "choice": "14"},
+        {"prob": 0.00104522705078125, "choice": "18"},
+        {"prob": 0.00011551380157470703, "choice": "17"},
+        {"prob": 5.042552947998047e-05, "choice": "19"},
     ],
-    "age_wmean": 17.816404402256012,
+    "age_wmean": 15.544570922851562,
     "is_student_probs": [
-        {"prob": 0.974609375, "choice": "true"},
-        {"prob": 0.025177001953125, "choice": "false"},
+        {"prob": 0.962890625, "choice": "true"},
+        {"prob": 0.037322998046875, "choice": "false"},
     ],
     "is_student": False,
     "name": "John",
@@ -80,7 +66,7 @@ generated_data = {
     "unit_time": 0.5,
     "courses": ["C++"],
     "trim": None,
-    "color": "white",
+    "color": "green",
 }
 ```
 

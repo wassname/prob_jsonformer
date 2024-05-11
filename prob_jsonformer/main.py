@@ -181,12 +181,12 @@ class Jsonformer:
 
         return response.split('"')[0].strip()
 
-    def generate_choice_probs(self, choices) -> str:
+    def generate_p_enum(self, choices) -> str:
         """
         This is not in the json schema, but can be usefull for effeciently getting the prob distibution over choices
         """
         prompt = self.get_prompt() + '"'
-        self.debug("[generate_string_prob]", prompt, is_prompt=True)
+        self.debug("[generate_p_enum]", prompt, is_prompt=True)
         input_ids = self.tokenizer.encode(prompt, return_tensors="pt").to(
             self.model.device
         )[0]
@@ -194,14 +194,14 @@ class Jsonformer:
         choices_tokens = [torch.tensor(c) for c in choices_tokens]
 
         r = list(choice_tree(self.model, self.tokenizer, input_ids, choices_tokens))
-        return r  # json.dumps(r)
+        return r
 
-    def generate_range_mean(self, range_min: float, range_max: float) -> float:
+    def generate_p_integer(self, range_min: float, range_max: float) -> float:
         """
         This is not in the json schema, but can be usefull for effeciently generating the weighted mean from a range of integers
         """
         choices = [str(n) for n in range(int(range_min), int(range_max) + 1)]
-        result = self.generate_choice_probs(choices)
+        result = self.generate_p_enum(choices)
 
         # now do a weighted average
         total = 0.0
@@ -332,18 +332,18 @@ class Jsonformer:
             return self.generate_string(
                 schema["maxLength"] if "maxLength" in schema else None
             )
-        elif schema_type == "choice_probs":
+        elif schema_type == "p_enum":
             if key:
                 obj[key] = self.generation_marker
             else:
                 obj.append(self.generation_marker)
-            return self.generate_choice_probs(schema["enum"])
-        elif schema_type == "range_mean":
+            return self.generate_p_enum(schema["values"])
+        elif schema_type == "p_integer":
             if key:
                 obj[key] = self.generation_marker
             else:
                 obj.append(self.generation_marker)
-            return self.generate_range_mean(schema["minimum"], schema["maximum"])
+            return self.generate_p_integer(schema["minimum"], schema["maximum"])
         elif schema_type == "enum":
             if key:
                 obj[key] = self.generation_marker
