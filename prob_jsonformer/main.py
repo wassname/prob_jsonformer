@@ -386,7 +386,9 @@ class Jsonformer:
             found_close_bracket = False
 
             for token_id in sorted_token_ids:
-                decoded_token = self.tokenizer.decode(token_id)
+                decoded_token = self.tokenizer.decode(
+                    token_id, skip_special_tokens=True
+                )
                 if "," in decoded_token:
                     found_comma = True
                     break
@@ -400,7 +402,7 @@ class Jsonformer:
         return obj
 
     def get_prompt(self):
-        template = """{prompt}\nOutput result in the following JSON schema format:\n{schema}\nResult: {progress}"""
+        template = """{prompt}\nOutput result in the following JSON schema format:\n```json{schema}```\nResult: ```json\n{progress}"""
         progress = json.dumps(self.value)
         gen_marker_index = progress.find(f'"{self.generation_marker}"')
         if gen_marker_index != -1:

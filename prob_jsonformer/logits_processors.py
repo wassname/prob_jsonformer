@@ -25,6 +25,7 @@ class StringStoppingCriteria(StoppingCriteria):
         result = '"' in last_token
 
         if self.max_length is not None:
+            # because of tokens this wont work pefectly
             str_l = len(self.tokenizer.decode(input_ids[0], skip_special_tokens=True))
             if str_l > self.max_length:
                 return True
@@ -86,7 +87,7 @@ class OutputNumbersTokens(LogitsWarper):
         self.allowed_mask = torch.zeros(vocab_size, dtype=torch.bool)
 
         for _, token_id in tokenizer.get_vocab().items():
-            token_str = tokenizer.decode(token_id).strip()
+            token_str = tokenizer.decode(token_id, skip_special_tokens=True).strip()
 
             if (
                 token_str == ""
@@ -157,7 +158,7 @@ class OutputIntegersTokens(LogitsWarper):
         self.allowed_mask = torch.zeros(vocab_size, dtype=torch.bool)
 
         for _, token_id in tokenizer.get_vocab().items():
-            token_str = tokenizer.decode(token_id).strip()
+            token_str = tokenizer.decode(token_id, skip_special_tokens=True).strip()
 
             if (
                 token_str == ""
