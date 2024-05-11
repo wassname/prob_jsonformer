@@ -5,6 +5,10 @@ This fork has been modified to include the token probabilities. This is not comp
 I've also merged some of the recent PR's for enum, integer, null, union. They are not yet included in the upstream Jsonformer. You can see them all below in this example:
 
 
+~~~
+pip install git+https://github.com/wassname/prob_jsonformer.git
+~~~
+
 ## Example
 
 ```python
