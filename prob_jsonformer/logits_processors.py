@@ -10,7 +10,6 @@ class StringStoppingCriteria(StoppingCriteria):
         self.tokenizer = tokenizer
         self.prompt_length = prompt_length
         self.max_length = max_length
-        print(max_length, ", max_length")
 
     def __call__(
         self,
@@ -28,7 +27,6 @@ class StringStoppingCriteria(StoppingCriteria):
         if self.max_length is not None:
             str_l = len(self.tokenizer.decode(input_ids[0], skip_special_tokens=True))
             if str_l > self.max_length:
-                print("maxlen", str_l)
                 return True
 
         return result

@@ -1,8 +1,8 @@
 # prob_jsonformer: A Bulletproof Way to Generate Probabilistic Structured JSON from Language Models.
 
-This fork has been modified to include the token probabilities. The original [README](https://github.com/1rgs/jsonformer) is includesbelow.
+This fork has been modified to include the token probabilities. This is not complaint with json schema, but it can be useful for efficient extracting of a range of possible values.
 
-I've also merged some of hte recent pr's for enum, integer, null, union. You can see them all below in this example:
+I've also merged some of the recent PR's for enum, integer, null, union. They are not yet included in the upstream Jsonformer. You can see them all below in this example:
 
 
 ## Example
@@ -18,12 +18,17 @@ tokenizer = AutoTokenizer.from_pretrained(model_name)
 json_schema = {
     "type": "object",
     "properties": {
-        "name": {"type": "string"},
-        "age": {"type": "integer"},
-        "age_probs": {"type": "choice_probs", "enum": [str(s) for s in range(10, 20)]},
-        "unit_time": {"type": "number"},
-        "is_student": {"type": "boolean"},
+        # we can return the probability of each choice, even if they are multiple tokens
+        "age_probs": {"type": "choice_probs", "enum": [str(s) for s in range(10, 30)]},
+        # we can return the probabilistic weighted mean of a range
+        "age_wmean": {"type": "range_mean", "minimum": 10, "maximum": 30},
+        # the prob of true and false
         "is_student_probs": {"type": "choice_probs", "enum": ["true", "false"]},
+        "is_student": {"type": "boolean"},
+        # we've merged patches for enum, integer, null, union - currently mising from jsonformer
+        "name": {"type": "string", "maxLength": 4},
+        "age": {"type": "integer"},
+        "unit_time": {"type": "number"},
         "courses": {
             "type": "array",
             "items": {"type": "string"}
@@ -36,30 +41,44 @@ json_schema = {
     }
 }
 
+
 prompt = "Generate a young person's information based on the following schema:"
 jsonformer = Jsonformer(model, tokenizer, json_schema, prompt, temperature=0)
 generated_data = jsonformer()
 
-generated_data = {'name': 'John Doe',
- 'age': 20,
- 'age_probs': [{'prob': 0.794921875, 'choice': '12'},
-  {'prob': 0.068359375, 'choice': '10'},
-  {'prob': 0.04345703125, 'choice': '16'},
-  {'prob': 0.03228759765625, 'choice': '14'},
-  {'prob': 0.0175628662109375, 'choice': '11'},
-  {'prob': 0.0157318115234375, 'choice': '15'},
-  {'prob': 0.006664276123046875, 'choice': '18'},
-  {'prob': 0.0046539306640625, 'choice': '13'},
-  {'prob': 0.00041294097900390625, 'choice': '17'},
-  {'prob': 0.00028824806213378906, 'choice': '19'},,
- 'unit_time': 0.01,
- 'is_student': True,
- 'is_student_probs': [{'prob': 0.8310546875, 'choice': 'true'},
-  {'prob': 0.1688232421875, 'choice': 'false'}],
- 'courses': ['C1'],
+generated_data = {'name': 'John',
+ 'age_probs': [{'prob': 0.62353515625, 'choice': '10'},
+  {'prob': 0.276611328125, 'choice': '12'},
+  {'prob': 0.05364990234375, 'choice': '20'},
+  {'prob': 0.0257415771484375, 'choice': '11'},
+  {'prob': 0.0047607421875, 'choice': '15'},
+  {'prob': 0.004688262939453125, 'choice': '16'},
+  {'prob': 0.002910614013671875, 'choice': '18'},
+  {'prob': 0.0024127960205078125, 'choice': '13'},
+  {'prob': 0.0015821456909179688, 'choice': '14'},
+  {'prob': 0.0013532638549804688, 'choice': '23'},
+  {'prob': 0.0012521743774414062, 'choice': '21'},
+  {'prob': 0.00042247772216796875, 'choice': '17'},
+  {'prob': 0.0003342628479003906, 'choice': '22'},
+  {'prob': 0.0002484321594238281, 'choice': '19'},
+  {'prob': 0.0001995563507080078, 'choice': '25'},
+  {'prob': 4.851818084716797e-05, 'choice': '24'},
+  {'prob': 3.30805778503418e-05, 'choice': '26'},
+  {'prob': 2.6404857635498047e-05, 'choice': '28'},
+  {'prob': 1.728534698486328e-05, 'choice': '27'},
+  {'prob': 2.9802322387695312e-06, 'choice': '29'}],
+ 'age_wmean': 17.32853078842163,
+ 'is_student_probs': [{'prob': 0.8173828125, 'choice': 'true'},
+  {'prob': 0.182373046875, 'choice': 'false'}],
+ 'is_student': False,
+ 'age': 17,
+ 'unit_time': 0.5,
+ 'courses': ['CS101'],
  'trim': None,
  'color': 'white'}
 ```
+
+ The original [README](https://github.com/1rgs/jsonformer) is includes below.
 
 # ORIGINAL: Jsonformer: A Bulletproof Way to Generate Structured JSON from Language Models.
 
