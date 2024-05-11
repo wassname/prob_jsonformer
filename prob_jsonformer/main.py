@@ -144,7 +144,7 @@ class Jsonformer:
 
         return result.item()
 
-    def generate_string(self) -> str:
+    def generate_string(self, maxLength=None) -> str:
         prompt = self.get_prompt() + '"'
         self.debug("[generate_string]", prompt, is_prompt=True)
         input_tokens = self.tokenizer.encode(prompt, return_tensors="pt").to(
@@ -157,7 +157,7 @@ class Jsonformer:
             num_return_sequences=1,
             temperature=self.temperature,
             stopping_criteria=[
-                StringStoppingCriteria(self.tokenizer, len(input_tokens[0]))
+                StringStoppingCriteria(self.tokenizer, len(input_tokens[0]), maxLength)
             ],
             pad_token_id=self.tokenizer.eos_token_id,
         )
@@ -313,7 +313,9 @@ class Jsonformer:
                 obj[key] = self.generation_marker
             else:
                 obj.append(self.generation_marker)
-            return self.generate_string()
+            return self.generate_string(
+                schema["maxLength"] if "maxLength" in schema else None
+            )
         elif schema_type == "choice_probs":
             if key:
                 obj[key] = self.generation_marker

@@ -4,9 +4,13 @@ import torch
 
 
 class StringStoppingCriteria(StoppingCriteria):
-    def __init__(self, tokenizer: PreTrainedTokenizer, prompt_length: int):
+    def __init__(
+        self, tokenizer: PreTrainedTokenizer, prompt_length: int, max_length: int = None
+    ):
         self.tokenizer = tokenizer
         self.prompt_length = prompt_length
+        self.max_length = max_length
+        print(max_length, ", max_length")
 
     def __call__(
         self,
@@ -20,6 +24,12 @@ class StringStoppingCriteria(StoppingCriteria):
         last_token = self.tokenizer.decode(last_token_id, skip_special_tokens=True)
 
         result = '"' in last_token
+
+        if self.max_length is not None:
+            str_l = len(self.tokenizer.decode(input_ids[0], skip_special_tokens=True))
+            if str_l > self.max_length:
+                print("maxlen", str_l)
+                return True
 
         return result
 
@@ -52,7 +62,7 @@ class NumberStoppingCriteria(StoppingCriteria):
             and len(decoded.replace(" ", "").split(".")[1]) > self.precision
         ):
             return True
-        
+
         if (
             len(decoded) > 1
             and "," in decoded
@@ -85,7 +95,8 @@ class OutputNumbersTokens(LogitsWarper):
                 or (
                     all(c.isdigit() or c == "." for c in token_str)
                     and token_str.count(".") <= 1
-                ) or (
+                )
+                or (
                     "," in token_str
                     and all(c.isdigit() or c == "." for c in token_str.split(",")[0])
                     and token_str.count(".") <= 1
@@ -98,6 +109,7 @@ class OutputNumbersTokens(LogitsWarper):
         scores[~mask] = -float("inf")
 
         return scores
+
 
 class IntegerStoppingCriteria(StoppingCriteria):
     def __init__(
@@ -128,7 +140,7 @@ class IntegerStoppingCriteria(StoppingCriteria):
             and any(c.isdigit() for c in decoded.split(",")[0])
         ):
             return True
-        
+
         if (
             len(decoded) > 1
             and any(c.isdigit() for c in decoded)
@@ -137,6 +149,7 @@ class IntegerStoppingCriteria(StoppingCriteria):
             return True
 
         return False
+
 
 class OutputIntegersTokens(LogitsWarper):
     def __init__(self, tokenizer: PreTrainedTokenizer, prompt: str):
@@ -151,7 +164,8 @@ class OutputIntegersTokens(LogitsWarper):
             if (
                 token_str == ""
                 or all(c.isdigit() for c in token_str)
-                or "," in token_str and all(c.isdigit() for c in token_str.split(",")[0])
+                or "," in token_str
+                and all(c.isdigit() for c in token_str.split(",")[0])
             ):
                 self.allowed_mask[token_id] = True
 
