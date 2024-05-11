@@ -38,7 +38,7 @@ def _choice_tree(
 
     next_choices = get_valid_next_choices(choices_tokens, current_tokens)
     if len(next_choices) == 0:
-        s = tokenizer.decode(current_tokens)
+        s = tokenizer.decode(current_tokens, skip_special_tokens=True)
         r = dict(prob=prob, choice=s)
         yield r
     else:
