@@ -10,12 +10,11 @@ pip install git+https://github.com/wassname/prob_jsonformer.git
 ~~~
 
 
-
-| method                        | KL_div_loss |     time |
-| :---------------------------- | ----------: | -------: |
-| method0: sampling             |   -0.147245 |  21.5937 |
-| method1: hindsight            |   -0.145874 | 0.631365 |
-| method3: gen tree (this work) |   -0.147246 | 0.066084 |
+| method                   | KL_div_loss |     time |
+| :----------------------- | ----------: | -------: |
+| method0: sampling        |    -3.09214 |  48.5044 |
+| method1: hindsight       |    -3.09214 | 0.683987 |
+| method3: generation tree |    -3.09216 | 0.075112 |
 
 KL_div_loss is the KL divergence between the true distribution and the generated distribution. Lower is better as it indicated a faithful sampling of the distribution. Time is in seconds.
 
