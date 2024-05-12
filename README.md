@@ -9,6 +9,17 @@ I've also merged some of the recent PR's for enum, integer, null, union. They ar
 pip install git+https://github.com/wassname/prob_jsonformer.git
 ~~~
 
+
+
+| method                        | KL_div_loss |     time |
+| :---------------------------- | ----------: | -------: |
+| method0: sampling             |   -0.147245 |  21.5937 |
+| method1: hindsight            |   -0.145874 | 0.631365 |
+| method3: gen tree (this work) |   -0.147246 | 0.066084 |
+
+KL_div_loss is the KL divergence between the true distribution and the generated distribution. Lower is better as it indicated a faithful sampling of the distribution. Time is in seconds.
+
+
 ## Example
 
 ```python
