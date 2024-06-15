@@ -1,4 +1,4 @@
-# prob_jsonformer: A Bulletproof Way to Generate Probabilistic Structured JSON from Language Models.
+# prob_jsonformer: Probabilistic Structured JSON from Language Models.
 
 This fork has been modified to include the token probabilities. This is not complaint with json schema, but it can be useful for efficient extracting of a range of possible values.
 
@@ -6,9 +6,16 @@ I've also merged some of the recent PR's for enum, integer, null, union. They ar
 
 
 ~~~
+# installing
 pip install git+https://github.com/wassname/prob_jsonformer.git
 ~~~
 
+
+## Metrics
+
+How well does it work? Well when I asked is `Q: Please sample a number from the distribution [0, 20]: `, assumming it should be a uniform distribution, this is how well it did:
+
+Lower is better as it indicates a faithful sampling of the distribution. Time is in seconds.
 
 | method                   | KL_div_loss |     time |
 | :----------------------- | ----------: | -------: |
@@ -16,7 +23,7 @@ pip install git+https://github.com/wassname/prob_jsonformer.git
 | method1: hindsight       |    -3.09214 | 0.683987 |
 | method3: generation tree |   **-3.09216**| **0.075112**|
 
-KL_div_loss is the KL divergence between the true distribution and the generated distribution. Lower is better as it indicates a faithful sampling of the distribution. Time is in seconds.
+KL_div_loss is the -1 * KL divergence between the true distribution and the generated distribution. 
 
 
 ## Example
