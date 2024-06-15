@@ -91,7 +91,7 @@ generated_data = {
 }
 ```
 
- The original [README](https://github.com/1rgs/jsonformer) is includes below.
+ The original [README](https://github.com/1rgs/jsonformer) is included below.
 
 # ORIGINAL: Jsonformer: A Bulletproof Way to Generate Structured JSON from Language Models.
 
