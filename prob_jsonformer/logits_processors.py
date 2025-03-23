@@ -1,15 +1,21 @@
 from typing import List
-from transformers import PreTrainedTokenizer, LogitsWarper, StoppingCriteria
+from transformers import PreTrainedTokenizer, StoppingCriteria
+from transformers.generation.logits_process import LogitsProcessor
 import torch
 
 
 class StringStoppingCriteria(StoppingCriteria):
     def __init__(
-        self, tokenizer: PreTrainedTokenizer, prompt_length: int, max_length: int = None
+        self,
+        tokenizer: PreTrainedTokenizer,
+        prompt_length: int,
+        max_length: int = None,
+        min_length: int = 1,
     ):
         self.tokenizer = tokenizer
         self.prompt_length = prompt_length
         self.max_length = max_length
+        self.min_length = min_length
 
     def __call__(
         self,
@@ -31,6 +37,13 @@ class StringStoppingCriteria(StoppingCriteria):
             str_l = len(o)
             if str_l > self.max_length:
                 return True
+
+        if self.min_length is not None:
+            gen_ids = input_ids[0][self.prompt_length :]
+            o = self.tokenizer.decode(gen_ids, skip_special_tokens=True)
+            str_l = len(o)
+            if str_l < self.min_length:
+                return False
 
         return result
 
@@ -81,7 +94,7 @@ class NumberStoppingCriteria(StoppingCriteria):
         return False
 
 
-class OutputNumbersTokens(LogitsWarper):
+class OutputNumbersTokens(LogitsProcessor):
     def __init__(self, tokenizer: PreTrainedTokenizer, prompt: str):
         self.tokenizer = tokenizer
         self.tokenized_prompt = tokenizer(prompt, return_tensors="pt")
@@ -152,7 +165,7 @@ class IntegerStoppingCriteria(StoppingCriteria):
         return False
 
 
-class OutputIntegersTokens(LogitsWarper):
+class OutputIntegersTokens(LogitsProcessor):
     def __init__(self, tokenizer: PreTrainedTokenizer, prompt: str):
         self.tokenizer = tokenizer
         self.tokenized_prompt = tokenizer(prompt, return_tensors="pt")
