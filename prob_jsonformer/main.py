@@ -1,4 +1,4 @@
-from typing import List, Set, Union, Dict, Any
+from typing import List, Set, Union, Dict, Any, Optional
 
 from prob_jsonformer.logits_processors import (
     NumberStoppingCriteria,
@@ -31,8 +31,8 @@ class Jsonformer:
         debug: bool = False,
         max_array_length: int = 10,
         max_number_tokens: int = 6,
-        temperature: float = 1.0,
-        max_string_token_length: int = 10,
+        temperature: Optional[float] = None,
+        max_string_token_length: Optional[int] = None,
     ):
         self.model = model
         self.tokenizer = tokenizer
@@ -144,7 +144,7 @@ class Jsonformer:
 
         return result.item()
 
-    def generate_string(self, maxLength=None) -> str:
+    def generate_string(self, maxLength=None, minLength=None) -> str:
         prompt = self.get_prompt() + '"'
         self.debug("[generate_string]", prompt, is_prompt=True)
         input_tokens = self.tokenizer.encode(prompt, return_tensors="pt").to(
@@ -157,8 +157,11 @@ class Jsonformer:
             num_return_sequences=1,
             temperature=self.temperature,
             stopping_criteria=[
-                StringStoppingCriteria(self.tokenizer, len(input_tokens[0]), maxLength)
+                StringStoppingCriteria(
+                    self.tokenizer, len(input_tokens[0]), maxLength, minLength
+                )
             ],
+            early_stopping=False,
             pad_token_id=self.tokenizer.eos_token_id,
         )
 
